@@ -24,30 +24,19 @@ import { Car, cars as cars_list } from './cars';
   // to demonstrate routing parameters
   // > try it {{host}}/persons/:the_name
   app.get( "/persons/:name", 
-    ( req: Request, res: Response ) => {
+    async ( req: Request, res: Response ) => {
+
       let { name } = req.params;
-
-      if ( !name ) {
-        return res.status(400)
-                  .send(`name is required`);
-      }
-
-      return res.status(200)
-                .send(`Welcome to the Cloud, ${name}!`);
+      if ( !name ) res.status(400).send(`name is required`);
+      return res.status(200).send(`Welcome to the Cloud, ${name}!`);
   } );
 
   // Get a greeting to a specific person to demonstrate req.query
   // > try it {{host}}/persons?name=the_name
-  app.get( "/persons/", ( req: Request, res: Response ) => {
+  app.get( "/persons/", async ( req: Request, res: Response ) => {
     let { name } = req.query;
-
-    if ( !name ) {
-      return res.status(400)
-                .send(`name is required`);
-    }
-
-    return res.status(200)
-              .send(`Welcome to the Cloud, ${name}!`);
+    if ( !name ) return res.status(400).send(`name is required`);
+    return res.status(200).send(`Welcome to the Cloud, ${name}!`);
   } );
 
   // Post a greeting to a specific person
@@ -56,31 +45,70 @@ import { Car, cars as cars_list } from './cars';
   // an application/json body to {{host}}/persons
   app.post( "/persons", 
     async ( req: Request, res: Response ) => {
-
       const { name } = req.body;
-
-      if ( !name ) {
-        return res.status(400)
-                  .send(`name is required`);
-      }
-
-      return res.status(200)
-                .send(`Welcome to the Cloud, ${name}!`);
+      if ( !name ) return res.status(400).send(`name is required`);
+    return res.status(200).send(`Welcome to the Cloud, ${name}!`);
   } );
 
   // @TODO Add an endpoint to GET a list of cars
   // it should be filterable by make with a query paramater
+  app.get("/cars/", async (req: Request, res: Response) => {
+    
+    const {make} = req.query;
+
+    //check if make is not provided,return all cars
+    if(!make) res.status(200).send(cars);
+
+    //query cars with make type
+    let new_cars = cars.filter(car => car.make === make );
+    
+    //if there is no match
+    if(new_cars.length === 0) res.status(400).send("No match is found!");
+
+    //return cars where make is found
+    return res.status(200).send(new_cars);
+  })
 
   // @TODO Add an endpoint to get a specific car
   // it should require id
   // it should fail gracefully if no matching car is found
+  app.get("/cars/:id", async(req: Request, res: Response) => {
+    const {id} = req.params;
+    if(!id) return res.status(400).send("id is required!");
+    
+    const car = cars.filter((car) => car.id.toString() === id);
+    if(car.length === 0) return res.status(400).send("Car id is not found!");
+    
+    return res.status(200).send(car);
+    
+  });
 
   /// @TODO Add an endpoint to post a new car to our list
   // it should require id, type, model, and cost
+  app.post("/cars/", (req: Request, res: Response) => {
+
+    //destructure object parameters
+    const {make, type, model, cost, id } = req.body;
+
+    //check if any is not provided
+    if(!type || !model || !cost || !make || !id){
+      return res.status(400).send("type, make, model and cost are required");
+    }
+    
+    //get an instance of car
+    let car: Car = {make, type, model, cost, id}
+
+    //Add new car object to cars array      
+    cars.push(car);
+
+    //return success response
+    return res.status(201).send(cars);
+  })
+
 
   // Start the Server
   app.listen( port, () => {
-      console.log( `server running http://localhost:${ port }` );
+      console.log( `server running on http://localhost:${ port }` );
       console.log( `press CTRL+C to stop server` );
   } );
 })();
